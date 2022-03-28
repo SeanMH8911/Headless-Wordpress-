@@ -4,19 +4,24 @@ import Head from "next/head";
 import Seo from "../seo";
 import { isEmpty } from "lodash";
 import { sanitize } from "dompurify";
+import PropTypes from "prop-types";
 
-const Layout = ({ data, children }) => {
-  const { page, header, footer, headerMenus, footerMenus } = data || {};
+const Layout = ({ data, isPost, children }) => {
+  const { page, post, posts, header, footer, headerMenus, footerMenus } =
+    data || {};
 
   // Blank Screen on this function
 
-  // if ( isEmpty(data?.page)) {
-  //     return null;
-  //   }
+  if (isEmpty(page) && isEmpty(post) && isEmpty(posts)) {
+    return null;
+  }
+
+  const seo = isPost ? post?.seo ?? {} : page?.seo ?? {};
+  const uri = isPost ? post?.uri ?? {} : page?.uri ?? {};
 
   return (
     <div>
-      <Seo seo={page?.seo} uri={page?.uri} />
+      <Seo seo={seo} uri={uri} />
       <Head>
         <link rel="shortcut icon" href={header.favicon} />
         {Seo?.schemaDetails ? (
@@ -25,7 +30,7 @@ const Layout = ({ data, children }) => {
             className="yoast-schema-graph"
             key="yoastSchema"
             dangerouslySetInnerHTML={{
-              __html: sanitize(page?.seo?.schemaDetails),
+              __html: sanitize(seo.schemaDetails),
             }}
           />
         ) : null}
@@ -35,6 +40,18 @@ const Layout = ({ data, children }) => {
       <Footer footer={footer} footerMenus={footerMenus?.edges} />
     </div>
   );
+};
+
+Layout.propTypes = {
+  data: PropTypes.object,
+  isPost: PropTypes.bool,
+  children: PropTypes.object,
+};
+
+Layout.defaultProps = {
+  data: {},
+  isPost: false,
+  children: {},
 };
 
 export default Layout;

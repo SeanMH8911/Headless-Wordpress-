@@ -18,14 +18,14 @@ export const handleRedirectsAndReturnData = (
   isPreview = false,
   loginRedirectURL = ""
 ) => {
-  // if (isPreview && null === data?.[field]) {
-  //   return {
-  //     redirect: {
-  //       destination: loginRedirectURL || "/",
-  //       statusCode: 307,
-  //     },
-  //   };
-  // }
+  if (isPreview && null === data?.[field]) {
+    return {
+      redirect: {
+        destination: loginRedirectURL || "/",
+        statusCode: 307,
+      },
+    };
+  }
 
   if (isEmpty(data)) {
     return {
