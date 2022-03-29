@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { sanitize } from "../../../utils/miscellanous";
+import { sanitize } from "../../../utils/miscellaneous";
 import Image from "../../image";
 
 const Post = ({ post }) => {

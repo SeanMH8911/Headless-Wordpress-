@@ -1,15 +1,15 @@
+import client from "../src/apollo/client";
+import { GET_PAGES_URI } from "../src/queries/pages/get-pages";
 import { isEmpty } from "lodash";
 import { useRouter } from "next/router";
-import { GET_PAGES_URI } from "../src/queries/pages/get-pages";
-import { GET_PAGE } from "../src/queries/pages/get_page";
-import client from "../src/apollo/client";
 import Layout from "../src/components/layout";
-import { sanitize } from "dompurify";
 import {
   FALLBACK,
   handleRedirectsAndReturnData,
   isCustomPageUri,
-} from "../src/utils/slugs";
+} from "../src/utils/slug";
+import { sanitize } from "../src/utils/miscellaneous";
+import { GET_PAGE } from "../src/queries/pages/get_page";
 
 const Page = ({ data }) => {
   const router = useRouter();
@@ -19,7 +19,16 @@ const Page = ({ data }) => {
   if (router.isFallback) {
     return <div>Loading...</div>;
   }
-  return <Layout data={data}>{router?.query?.slug.join("/")}</Layout>;
+
+  return (
+    <Layout data={data}>
+      <div
+        dangerouslySetInnerHTML={{
+          __html: sanitize(data?.page?.content ?? {}),
+        }}
+      />
+    </Layout>
+  );
 };
 
 export default Page;
@@ -36,11 +45,34 @@ export async function getStaticProps({ params }) {
     props: {
       data: data || {},
     },
+    /**
+     * Revalidate means that if a new request comes to server, then every 1 sec it will check
+     * if the data is changed, if it is changed then it will update the
+     * static file inside .next folder with the new data, so that any 'SUBSEQUENT' requests should have updated data.
+     */
     revalidate: 1,
   };
+
   return handleRedirectsAndReturnData(defaultProps, data, errors, "page");
 }
 
+/**
+ * Since the page name uses catch-all routes,
+ * for example [...slug],
+ * that's why params would contain slug which is an array.
+ * For example, If we need to have dynamic route '/foo/bar'
+ * Then we would add paths: [ params: { slug: ['foo', 'bar'] } } ]
+ * Here slug will be an array is ['foo', 'bar'], then Next.js will statically generate the page at /foo/bar
+ *
+ * At build time next js will will make an api call get the data and
+ * generate a page bar.js inside .next/foo directory, so when the page is served on browser
+ * data is already present, unlike getInitialProps which gets the page at build time but makes an api
+ * call after page is served on the browser.
+ *
+ * @see https://nextjs.org/docs/basic-features/data-fetching#the-paths-key-required
+ *
+ * @returns {Promise<{paths: [], fallback: boolean}>}
+ */
 export async function getStaticPaths() {
   const { data } = await client.query({
     query: GET_PAGES_URI,
